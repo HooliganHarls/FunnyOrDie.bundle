@@ -1,7 +1,5 @@
 # PMS plugin framework
-from PMS import *
-from PMS.Objects import *
-from PMS.Shortcuts import *
+
 
 ####################################################################################################
 
@@ -91,7 +89,7 @@ def Menu():
 
     dir = MediaContainer(title1="Funny or Die",viewGroup="List")
     for c in CATEGORY_LIST:
-        PMS.Log(c['key'])
+        Log(c['key'])
         dir.Append(Function(DirectoryItem(CategoryOptions,"%s" % c['title'],"%s" % c['title']),category=c['key']))
     return dir
 
@@ -99,8 +97,8 @@ def CategoryOptions(sender,category=''):
     dir = MediaContainer(title1=sender.title1,title2=sender.itemTitle,viewGroup="List")
 
     for s in SORTS:
-        PMS.Log(category)
-        PMS.Log(s['key'])
+        Log(category)
+        Log(s['key'])
         if s['allow_date_filter']:
             dir.Append(Function(DirectoryItem(DateOptions,"%s" % s['title'],"%s" % s['title']),category=category,s=s['key']))
         else:
@@ -121,19 +119,17 @@ def VideoList(sender,category='',s='',date='',page=1):
         t = sender.title1
     dir = MediaContainer(title1=t,title2="Page %s" % (page),viewGroup="InfoList")
     url = makeUrl(category,s,date,page)
-    xml = XML.ElementFromURL(url, isHTML=True, cacheTime=Constants.CACHE_1HOUR, errors='replace')
+    xml = HTML.ElementFromURL(url, cacheTime=360000, errors='replace')
     for e in xml.xpath('//div[@class="detailed_vp"]'):
-        try:
-            href = e.xpath('.//a')[0].get('href')
-            id = href.split('/')[2]
-            PMS.Log(id)
+        href = e.xpath('.//a')[0].get('href')
+        id = href.split('/')[2]
+        Log('id: ' + id)
+        vi = makeVideoItemFromId(id)
+        Log("appended: ")
+        Log(vi)
+        dir.Append(vi)
+                
 
-            vi = makeVideoItemFromId(id)
-            if vi:
-                dir.Append(vi)
-
-        except Exception, e:
-            PMS.Log(e)
 
     dir.Append(Function(DirectoryItem(VideoList,"Next Page...","Next Page..."),category=category,s=s,date=date,page=page+1))
 
@@ -154,8 +150,7 @@ def makeUrl(category,s,date_filter,page):
 def makeVideoItemFromId(id):
 
     url = "http://www.funnyordie.com/player/%s" % id
-    xml = XML.ElementFromURL(url, cacheTime=Constants.CACHE_1HOUR, errors='replace')
-
+    xml = XML.ElementFromURL(url, cacheTime=360000, errors='replace')
     n = {
         'ns': 'http://xspf.org/ns/0/'
     }
@@ -163,26 +158,26 @@ def makeVideoItemFromId(id):
     try:
         file = xml.xpath('//ns:location/text()',namespaces=n)[0]
     except:
-        PMS.Log('file')
-        PMS.Log(XML.StringFromElement(xml))
+        Log('file')
+        Log(XML.StringFromElement(xml))
         return None
     try:
         image = xml.xpath('//ns:image/text()',namespaces=n)[0]
     except:
-        PMS.Log('image')
-        PMS.Log(XML.StringFromElement(xml))
+        Log('image')
+        Log(XML.StringFromElement(xml))
         return None
     try:
         title = xml.xpath('//ns:title/text()',namespaces=n)[0]
     except:
-        PMS.Log('title')
-        PMS.Log(XML.StringFromElement(xml))
+        Log('title')
+        Log(XML.StringFromElement(xml))
         return None
     try:
         summary = xml.xpath('//ns:annotation/text()',namespaces=n)[0]
     except:
-        PMS.Log('summary')
-        PMS.Log(XML.StringFromElement(xml))
+        Log('summary')
+        Log(XML.StringFromElement(xml))
         return None
 
     try:
@@ -202,10 +197,10 @@ def makeVideoItemFromId(id):
         title=title,
         subtitle='',
         summary=summary,
-        duration=duration,
         thumb=image,
-        art=R(FOD_ART),
-        rating=rating
+        art=R(FOD_ART)
     )
+    Log("vi:")
+    Log(vi)
 
     return vi
